@@ -176,8 +176,9 @@ public class SimpleMultiplication {
             }
             
             // Conclusively apply mathematical multiplier logic powers rendering positional 10s shifts values explicitly numerical structures prior total bindings accumulation processes 
-            BigInteger pVal = new BigInteger(partials).multiply(BigInteger.TEN.pow(indentationSpaces));
-            BigInteger cVal = new BigInteger(carriers).multiply(BigInteger.TEN.pow(indentationSpaces + 1)); // Carrier shifts over accurately one space up relative to underlying corresponding partial bounds row scopes
+            String extraZeros = "0".repeat(indentationSpaces);
+            BigInteger pVal = new BigInteger(partials + extraZeros);
+            BigInteger cVal = new BigInteger(carriers + extraZeros + "0"); // Carrier shifts over accurately one space up relative to underlying corresponding partial bounds row scopes
             totalResult = totalResult.add(pVal).add(cVal);
             
             opsCounter += 10; // Heavy generalized algorithm logic weighting estimation covering mathematical subroutines related strictly parsing String data back numerical scopes processing accumulations limits parameters 
