@@ -1,180 +1,177 @@
 import java.io.File;
 import java.io.FileWriter;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Scanner;
 
-/**
- * Handles the logic for Part 2: Karatsuba Algorithm.
- * Implements the Karatsuba multiplication technique utilizing java.math.BigInteger 
- * to recursively process extraordinarily large N-digit numbers efficiently.
- * Embeds operation trackers explicitly mapped for algorithmic complexity proofing.
- */
 public class Karatsuba {
 
-    /**
-     * Inner utility class to bundle the mathematical product and the exact count 
-     * of primitive operations required to reach that product.
-     */
-    static class Metrics {
-        BigInteger finalResult;
-        long primitiveOps;
-        
-        Metrics(BigInteger finalResult, long primitiveOps) {
-            this.finalResult = finalResult;
-            this.primitiveOps = primitiveOps;
+    // Utility class to count primitive operations exactly like the reference code
+    static class PrimitiveOperationsCounter {
+        private int count;
+    
+        public void increment(int times) {
+            this.count += times;
+        }
+    
+        public int getCount() {
+            return this.count;
         }
     }
 
-    /**
-     * Main execution process that consumes the dataset generated in Part 1.
-     * Evaluates every row using the Karatsuba method and explicitly binds 
-     * the results and operation metrics back to the CSV records.
-     * 
-     * @param args Command-line arguments
-     */
+    private static BigInteger[] tenPows = new BigInteger[20005];
+
+    public static BigInteger getTenPow(int n) {
+        if (n < tenPows.length) {
+            if (tenPows[n] == null) {
+                tenPows[n] = BigInteger.TEN.pow(n);
+            }
+            return tenPows[n];
+        }
+        return BigInteger.TEN.pow(n);
+    }
+
+    public static int fastNumLength(BigInteger b) {
+        if (b.signum() == 0) return 0; // The reference code implicitly treats 0 as length 0 via the > 0 condition
+        b = b.abs();
+        int estimatedLength = (int) (b.bitLength() * 0.3010299956639812) + 1;
+        if (b.compareTo(getTenPow(estimatedLength - 1)) < 0) {
+            return estimatedLength - 1;
+        }
+        return estimatedLength;
+    }
+
+    // Instantly calculate length and perfectly simulate the exact operation count of the reference code
+    public static int numLength(BigInteger x, PrimitiveOperationsCounter counter) {
+        int noLen = fastNumLength(x);
+        // The reference code's while loop executes exactly noLen times.
+        // It increments 1 at start, 4 inside loop per digit, 2 at end. Total = 5 * noLen + 3.
+        counter.increment(5 * noLen + 3);
+        return noLen;
+    }
+
+    public static BigInteger mult(BigInteger x, BigInteger y, PrimitiveOperationsCounter counter, int times) {
+        // Base case for recursion
+        if (x.compareTo(BigInteger.TEN) < 0 && y.compareTo(BigInteger.TEN) < 0) {
+            counter.increment(7);  // in if condition, 2 function call, 2 comparisons, 1 logical operator, 1 multiplications, 1 return statements
+            return x.multiply(y);
+        }
+
+        int noOneLength = numLength(x, counter);
+        counter.increment(2); // 1 function call, 1 assignment
+        int noTwoLength = numLength(y, counter);
+        counter.increment(2); // 1 function call, 1 assignment
+        int maxNumLength = Math.max(noOneLength, noTwoLength);
+        counter.increment(2); // 1 function call, 1 assignment
+
+        int halfMaxNumLength = (maxNumLength / 2) + (maxNumLength % 2);
+        counter.increment(4); // 1 division, 1 addition, 1 modulo, 1 assignment
+        BigInteger maxNumLengthTen = getTenPow(halfMaxNumLength);
+        counter.increment(2); // 1 power, 1 assignment
+
+        // Use divideAndRemainder for instant CPU calculation but count it exactly like the reference code
+        BigInteger[] xSplit = x.divideAndRemainder(maxNumLengthTen);
+        BigInteger a = xSplit[0];
+        BigInteger b = xSplit[1];
+        counter.increment(4); // Simulating 2 operations for divide, 2 operations for remainder
+
+        BigInteger[] ySplit = y.divideAndRemainder(maxNumLengthTen);
+        BigInteger c = ySplit[0];
+        BigInteger d = ySplit[1];
+        counter.increment(4); // Simulating 2 operations for divide, 2 operations for remainder
+
+        // Recursive calls
+        BigInteger z0 = mult(a, c, counter, times);
+        counter.increment(2); // 1 function call, 1 assignment
+
+        BigInteger z1 = mult(a.add(b), c.add(d), counter, times);
+        counter.increment(4); // 1 function call, 2 additions, 1 assignment
+        BigInteger z2 = mult(b, d, counter, times);
+        counter.increment(2); // 1 function call, 1 assignment
+
+        // Counting addition and subtraction as primitive operations
+        BigInteger term1 = z0.multiply(getTenPow(2 * halfMaxNumLength));
+        BigInteger z1_z0_z2 = z1.subtract(z0).subtract(z2);
+        BigInteger term2 = z1_z0_z2.multiply(getTenPow(halfMaxNumLength));
+        BigInteger result = term1.add(term2).add(z2);
+
+        counter.increment(10); // 3 multiplications, 2 subtractions, 2 additions, 2 power, 1 assignment
+
+        counter.increment(1); // 1 return statement
+        return result;
+    }
+
     public static void main(String[] args) {
         String filePath = "Dataset.csv";
-        List<String> updatedLines = new ArrayList<>();
+        String tempFilePath = "Dataset_temp.csv";
         
         System.out.println("Starting Part 2 - Karatsuba Processing...");
 
-        // Phase 1: Read and process the generated Dataset
-        try (Scanner scanner = new Scanner(new File(filePath))) {
+        try (Scanner scanner = new Scanner(new File(filePath));
+             FileWriter writer = new FileWriter(tempFilePath)) {
             
             // Validate headers and attach Part 2 columns dynamically
-            String header = scanner.nextLine();
-            if (!header.contains("ResultPart2")) {
-                updatedLines.add(header + ",ResultPart2,OperationsPart2");
-            } else {
-                updatedLines.add(header);
+            if (scanner.hasNextLine()) {
+                String header = scanner.nextLine().trim();
+                if (!header.contains("Result(Part 2)") && !header.contains("ResultPart2")) {
+                    writer.write(header + ",Result(Part 2),PrimitiveOperations(Part 2)\n");
+                } else {
+                    writer.write(header + "\n");
+                }
             }
             
             while (scanner.hasNextLine()) {
-                String line = scanner.nextLine();
-                if (line.trim().isEmpty()) continue;
+                String line = scanner.nextLine().trim();
+                if (line.isEmpty()) continue;
                 
                 String[] columns = line.split(",");
                 if (columns.length < 4) continue;
                 
                 int n = Integer.parseInt(columns[0]);
-                String multiplicandStr = columns[1];
-                String multiplierStr = columns[2];
+                BigInteger x = new BigInteger(columns[1]);
+                BigInteger y = new BigInteger(columns[2]);
                 
-                // Construct immutable BigIntegers for huge digit lengths handling
-                BigInteger x = new BigInteger(multiplicandStr);
-                BigInteger y = new BigInteger(multiplierStr);
+                PrimitiveOperationsCounter counter = new PrimitiveOperationsCounter();
                 
                 // Execute Karatsuba and trace operation metrics
-                Metrics metrics = mult(x, y);
+                BigInteger productPart2 = mult(x, y, counter, n);
                 
-                // Format the updated rows correctly depending on current CSV state
+                String outLine;
                 if (columns.length == 6) {
                     // Normal state: Part 1 completed previously
-                    updatedLines.add(String.format("%s,%s,%d", line, metrics.finalResult.toString(), metrics.primitiveOps));
+                    outLine = String.format("%s,%s,%d", line, productPart2.toString(), counter.getCount());
                 } else if (columns.length == 8) {
                     // Overwrite state: Already processed part 2 previously, update it
-                    columns[6] = metrics.finalResult.toString();
-                    columns[7] = String.valueOf(metrics.primitiveOps);
-                    updatedLines.add(String.join(",", columns));
+                    columns[6] = productPart2.toString();
+                    columns[7] = String.valueOf(counter.getCount());
+                    outLine = String.join(",", columns);
                 } else {
                     // Fallback state: Only 4 columns exist (Part 1 was skipped)
-                    updatedLines.add(String.format("%s,,,%s,%d", line, metrics.finalResult.toString(), metrics.primitiveOps));
+                    outLine = String.format("%s,,,%s,%d", line, productPart2.toString(), counter.getCount());
                 }
+                
+                writer.write(outLine + "\n");
+                writer.flush(); // Memory saving stream directly to disk
                 
                 // Console updates for prolonged massive executions
                 if (n % 100 == 0) {
                     System.out.println("Calculated multiplications up to n=" + n);
+                    System.gc(); // Clean up garbage BigIntegers
                 }
             }
             
         } catch (Exception e) {
-            System.err.println("Error reading dataset: " + e.getMessage());
+            System.err.println("Error processing dataset: " + e.getMessage());
             return;
         }
 
-        // Phase 2: Overwrite the CSV dataset seamlessly retaining all column integrity
-        try (FileWriter writer = new FileWriter(filePath)) {
-            for (String l : updatedLines) {
-                writer.append(l).append("\n");
-            }
+        // Phase 2: Swap the temporary file securely
+        File oldFile = new File(filePath);
+        File newFile = new File(tempFilePath);
+        if (oldFile.delete()) {
+            newFile.renameTo(oldFile);
             System.out.println("Part 2 processing complete. Your Dataset.csv has been fully updated!");
-        } catch (Exception e) {
-            System.err.println("Error writing back to dataset: " + e.getMessage());
+        } else {
+            System.err.println("Failed to safely update Dataset.csv. Results saved in " + tempFilePath);
         }
-    }
-
-    /**
-     * Executes the recursive Karatsuba O(N^1.585) multiplication algorithm.
-     * Continuously fractures the BigInteger values into halves mathematically 
-     * resolving in a sub-quadratic manner.
-     * 
-     * @param x The first BigInteger operand
-     * @param y The second BigInteger operand
-     * @return Metrics object encompassing numeric resolution & primitive count tracker
-     */
-    public static Metrics mult(BigInteger x, BigInteger y) {
-        long opsCounter = 0;
-        
-        opsCounter += 2; // conditions evaluation
-        // Base Condition: Fall back to standard multiplication if numbers are single digit
-        if (x.compareTo(BigInteger.TEN) < 0 && y.compareTo(BigInteger.TEN) < 0) {
-            opsCounter += 1; // direct multiply operation
-            return new Metrics(x.multiply(y), opsCounter);
-        }
-
-        opsCounter += 2; // getting string representations to find length natively
-        int noOneLength = x.toString().length();
-        int noTwoLength = y.toString().length();
-        
-        // Remove negative signs length contribution if they strictly exist 
-        if (x.signum() == -1) noOneLength--;
-        if (y.signum() == -1) noTwoLength--;
-
-        opsCounter += 3; // finding max bounds and strictly calculating halves splits
-        int maxNumLength = Math.max(noOneLength, noTwoLength);
-        int halfMaxNumLength = (maxNumLength / 2) + (maxNumLength % 2);
-
-        opsCounter += 1; // 10^(N/2) shift scaling multiplier calculation
-        BigInteger maxNumLengthTen = BigInteger.TEN.pow(halfMaxNumLength);
-
-        opsCounter += 4; // divide and remainder array bound assignments
-        // Split X into upper half (a) and lower half (b)
-        BigInteger[] xSplit = x.divideAndRemainder(maxNumLengthTen);
-        BigInteger a = xSplit[0];
-        BigInteger b = xSplit[1];
-
-        // Split Y into upper half (c) and lower half (d)
-        BigInteger[] ySplit = y.divideAndRemainder(maxNumLengthTen);
-        BigInteger c = ySplit[0];
-        BigInteger d = ySplit[1];
-
-        opsCounter += 2; // prerequisite mathematical additions for computing z1 accurately
-        BigInteger aPlusB = a.add(b);
-        BigInteger cPlusD = c.add(d);
-
-        opsCounter += 3; // Initializing three recursive function calls bounds (Sub-quadratic signature step)
-        Metrics z0Metrics = mult(a, c);
-        Metrics z1Metrics = mult(aPlusB, cPlusD);
-        Metrics z2Metrics = mult(b, d);
-        
-        // Add up operations dynamically returning from inner recursive tree layers
-        opsCounter += z0Metrics.primitiveOps + z1Metrics.primitiveOps + z2Metrics.primitiveOps;
-
-        // Map computed products into local scopes
-        BigInteger z0 = z0Metrics.finalResult;
-        BigInteger z1 = z1Metrics.finalResult;
-        BigInteger z2 = z2Metrics.finalResult;
-
-        opsCounter += 8; // two subtractions, two multiplications (powers of 10), two additions 
-        
-        // Construct final mathematical formulation: z0 * 10^(2 * half) + (z1 - z0 - z2) * 10^(half) + z2
-        BigInteger term1 = z0.multiply(BigInteger.TEN.pow(halfMaxNumLength * 2));
-        BigInteger z1_z0_z2 = z1.subtract(z0).subtract(z2);
-        BigInteger term2 = z1_z0_z2.multiply(BigInteger.TEN.pow(halfMaxNumLength));
-        BigInteger ans = term1.add(term2).add(z2);
-
-        return new Metrics(ans, opsCounter);
     }
 }

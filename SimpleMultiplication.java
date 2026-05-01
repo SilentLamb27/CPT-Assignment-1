@@ -95,11 +95,14 @@ public class SimpleMultiplication {
      */
     public static Metrics runMultiplication(String multiplicand, String multiplier, int n) {
         long opsCounter = 0;
-        BigInteger totalResult = BigInteger.ZERO;
         
-        opsCounter += 2; // initialization variables
+        int mLength = multiplicand.length();
+        int nLength = multiplier.length();
+        opsCounter += 2; 
         
-        // As directed by prompt, specifically showcase visual partial sums when n is less than or equals 10.
+        // Mathematical array to store final product digits. Max length is the sum of both lengths.
+        int[] resultArr = new int[mLength + nLength];
+        opsCounter += 1; 
         boolean showConsoleOutput = (n <= 10);
         if (showConsoleOutput) {
             System.out.println("---------------------------------------------------------");
@@ -109,58 +112,54 @@ public class SimpleMultiplication {
             System.out.printf("%24s\n", multiplier);
             System.out.println("-------------------------");
         }
-
-        int mLength = multiplicand.length();
-        int nLength = multiplier.length();
-        opsCounter += 2; // length metric fetching
-        
-        // Loop iterations run structurally backwards ensuring least-significant digit alignments priority
-        opsCounter += 1; // outer loop init
+        opsCounter += 1; 
         for (int i = nLength - 1; i >= 0; i--) {
-            opsCounter += 1; // loop condition evaluate
+            opsCounter += 1; 
             
-            // Acquire current bottom evaluating multiplier
             int multDigit = multiplier.charAt(i) - '0';
-            opsCounter += 2; // array char access & ASCII offset sub
+            opsCounter += 2; 
             
-            StringBuilder tempPartials = new StringBuilder();
-            StringBuilder tempCarriers = new StringBuilder();
-            opsCounter += 2; // init StringBuilders structures
+            // Only create memory-heavy StringBuilders if we actually need to print them
+            StringBuilder tempPartials = showConsoleOutput ? new StringBuilder() : null;
+            StringBuilder tempCarriers = showConsoleOutput ? new StringBuilder() : null;
+            opsCounter += 2; 
             
-            opsCounter += 1; // inner loop init
+            opsCounter += 1; 
             for (int j = mLength - 1; j >= 0; j--) {
-                opsCounter += 1; // inner loop conditional entry evaluation
+                opsCounter += 1; 
                 
-                // Fetch consecutive top digit
                 int baseDigit = multiplicand.charAt(j) - '0';
-                opsCounter += 2; // character fetch & translation evaluation
+                opsCounter += 2; 
                 
-                // Literal multiplication 
                 int product = multDigit * baseDigit;
-                opsCounter += 2; // numerical math and int primitive binding
+                opsCounter += 2; 
                 
                 int currentPartial = product % 10;
                 int currentCarrier = product / 10;
-                opsCounter += 4; // mathematical div/mod logic & associated assignment bindings
+                opsCounter += 4; 
                 
-                tempPartials.append(currentPartial);
-                tempCarriers.append(currentCarrier);
-                opsCounter += 2; // mutable builder append operation logs
+                // Track mathematical results directly into the array based on positional offsets
+                int position = i + j + 1;
+                int sum = resultArr[position] + currentPartial;
+                resultArr[position] = sum % 10;
+                resultArr[position - 1] += sum / 10 + currentCarrier;
+                opsCounter += 5; // Array assignments and shift maths
                 
-                opsCounter += 1; // increment internal traversal loops backwards index offset
+                if (showConsoleOutput) {
+                    tempPartials.append(currentPartial);
+                    tempCarriers.append(currentCarrier);
+                }
+                
+                opsCounter += 1; 
             }
-            opsCounter += 1; // loop terminal termination break exit
+            opsCounter += 1; 
             
-            // As strings were appended digit dynamically from right backwards, they necessitate standard reversing representation
-            String partials = tempPartials.reverse().toString();
-            String carriers = tempCarriers.reverse().toString();
-            opsCounter += 2; 
-            
-            // Scale integer value determining blank character empty trailing paddings based explicitly upon base 10 offset multiplier scope
-            int indentationSpaces = (nLength - 1 - i); 
-            
+            // Only do String concatenation if we are printing the visual layout
             if (showConsoleOutput) {
-                // Dynamically offset numbers spatially, creating right-wing cascaded structure accurately resembling handwritten mathematical layouts
+                String partials = tempPartials.reverse().toString();
+                String carriers = tempCarriers.reverse().toString();
+                int indentationSpaces = (nLength - 1 - i); 
+                
                 String rightSidePadding = " ".repeat(indentationSpaces);
                 String displayPartials = partials + rightSidePadding;
                 String displayCarriers = carriers + rightSidePadding;
@@ -175,17 +174,20 @@ public class SimpleMultiplication {
                 }
             }
             
-            // Conclusively apply mathematical multiplier logic powers rendering positional 10s shifts values explicitly numerical structures prior total bindings accumulation processes 
-            String extraZeros = "0".repeat(indentationSpaces);
-            BigInteger pVal = new BigInteger(partials + extraZeros);
-            BigInteger cVal = new BigInteger(carriers + extraZeros + "0"); // Carrier shifts over accurately one space up relative to underlying corresponding partial bounds row scopes
-            totalResult = totalResult.add(pVal).add(cVal);
-            
-            opsCounter += 10; // Heavy generalized algorithm logic weighting estimation covering mathematical subroutines related strictly parsing String data back numerical scopes processing accumulations limits parameters 
-            
-            opsCounter += 1; // outer loop iteration
+            opsCounter += 1; 
         }
-        opsCounter += 1; // outer loop resolution loop exit structure closure  
+        opsCounter += 1; 
+        
+        // Finalize: Convert the array to a String, and then to BigInteger just ONCE at the end
+        StringBuilder finalResultStr = new StringBuilder();
+        for (int digit : resultArr) {
+            // Ignore leading zeros
+            if (!(finalResultStr.length() == 0 && digit == 0)) {
+                finalResultStr.append(digit);
+            }
+        }
+        BigInteger totalResult = finalResultStr.length() == 0 ? BigInteger.ZERO : new BigInteger(finalResultStr.toString());
+        opsCounter += 2; 
         
         if (showConsoleOutput) {
             System.out.println("-------------------------");
@@ -193,7 +195,7 @@ public class SimpleMultiplication {
             System.out.println("=========================\n");
         }
         
-        opsCounter += 1; // Object metrics initialization memory resolution allocations
+        opsCounter += 1; 
         return new Metrics(totalResult, opsCounter);
     }
 }
