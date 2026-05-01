@@ -21,8 +21,8 @@ public class DatasetGenerator {
             // Write standard CSV header outlining the initial column structure
             writer.append("n,Multiplicand,Multiplier,ExpectedProduct\n");
 
-            // Loop and generate test parameters for digit lengths from 1 to 1000
-            for (int n = 1; n <= 1000; n++) {
+            // Loop and generate test parameters for digit lengths from 1 to 10000
+            for (int n = 1; n <= 10000; n++) {
                 // Generate two distinct random numbers of strictly length 'n'
                 BigInteger multiplicand = generateNLengthNumber(n);
                 BigInteger multiplier = generateNLengthNumber(n);
