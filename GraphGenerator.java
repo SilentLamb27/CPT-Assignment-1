@@ -10,7 +10,18 @@ import java.util.List;
 import java.util.Scanner;
 import javax.imageio.ImageIO;
 
+/**
+ * Generates visual PNG graph plots from the processed Dataset.csv.
+ * Reads the primitive operation counts and renders a line chart
+ * illustrating the O(N^2) growth curve for Simple Multiplication.
+ */
 public class GraphGenerator {
+
+    /**
+     * Main execution method that reads Dataset.csv and generates
+     * a Simple Multiplication performance graph as a PNG image.
+     * @param args Command-line arguments (not used).
+     */
     public static void main(String[] args) {
         List<Integer> xData = new ArrayList<>();
         List<Long> yData = new ArrayList<>();
