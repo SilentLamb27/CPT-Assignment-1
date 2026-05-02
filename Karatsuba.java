@@ -4,20 +4,25 @@ import java.math.BigInteger;
 import java.util.Scanner;
 
 /**
- * Implementation of the Karatsuba multiplication algorithm.
- * This class is designed to process large datasets and accurately count 
- * primitive operations based on a specific reference implementation.
+ * Handles the logic for Part 2: Karatsuba Multiplication Algorithm.
+ * Implements the divide-and-conquer O(N^1.585) multiplication strategy.
+ * Tracks primitive operations to enable direct comparison with Simple Multiplication.
  */
 public class Karatsuba {
 
-    // Utility class to count primitive operations exactly like the reference code
+    /**
+     * Inner utility class to accumulate primitive operation counts
+     * throughout the recursive Karatsuba execution.
+     */
     static class PrimitiveOperationsCounter {
         private int count;
     
+        /** Increments the operation counter by the specified amount. */
         public void increment(int times) {
             this.count += times;
         }
     
+        /** Returns the current accumulated primitive operation count. */
         public int getCount() {
             return this.count;
         }
@@ -30,8 +35,8 @@ public class Karatsuba {
 
     /**
      * Retrieves 10^n from cache or calculates it if not present.
-     * @param n The exponent for 10
-     * @return BigInteger representing 10^n
+     * @param n The exponent for the power of ten.
+     * @return BigInteger representing 10^n.
      */
     public static BigInteger getTenPow(int n) {
         if (n < tenPows.length) {
@@ -44,8 +49,10 @@ public class Karatsuba {
     }
 
     /**
-     * Estimates the number of digits in a BigInteger using bit length for speed.
-     * Log10(2) is approximately 0.30103.
+     * Efficiently computes the number of decimal digits in a BigInteger
+     * using bit-length estimation instead of the costly toString().length() approach.
+     * @param b The BigInteger whose digit count is needed.
+     * @return The number of decimal digits in b.
      */
     public static int fastNumLength(BigInteger b) {
         if (b.signum() == 0) return 0; // The reference code implicitly treats 0 as length 0 via the > 0 condition
@@ -57,7 +64,13 @@ public class Karatsuba {
         return estimatedLength;
     }
 
-    // Instantly calculate length and perfectly simulate the exact operation count of the reference code
+    /**
+     * Calculates the digit length of a BigInteger and simultaneously increments
+     * the operation counter to simulate the exact primitive cost of the reference code's while loop.
+     * @param x       The BigInteger whose length is being measured.
+     * @param counter The operation counter to accumulate costs into.
+     * @return The number of decimal digits in x.
+     */
     public static int numLength(BigInteger x, PrimitiveOperationsCounter counter) {
         int noLen = fastNumLength(x);
         // The reference code's while loop executes exactly noLen times.
@@ -67,14 +80,15 @@ public class Karatsuba {
     }
 
     /**
-     * Core Karatsuba multiplication logic.
-     * splits numbers into high and low parts: x = a*10^m + b, y = c*10^m + d
-     * result = z0*10^(2m) + (z1-z0-z2)*10^m + z2
+     * Recursively multiplies two BigIntegers using the Karatsuba divide-and-conquer strategy.
+     * For small numbers (n <= 10), prints detailed step-by-step output to the terminal
+     * showing splits, base case products, and recombination results.
      * 
-     * @param x First factor
-     * @param y Second factor
-     * @param counter Metrics tracker
-     * @param times Row index or size for conditional logging
+     * @param x       The first multiplicand.
+     * @param y       The second multiplicand.
+     * @param counter Tracks cumulative primitive operations across all recursive calls.
+     * @param times   The digit count 'n' from the dataset row, used to toggle console output.
+     * @return The product x * y as a BigInteger.
      */
     public static BigInteger mult(BigInteger x, BigInteger y, PrimitiveOperationsCounter counter, int times) {
         boolean showConsoleOutput = (times <= 10);
@@ -150,6 +164,11 @@ public class Karatsuba {
         return result;
     }
 
+    /**
+     * Entry point to execute the Part 2 Karatsuba algorithm across our entire generated Dataset.csv.
+     * Reads the dataset, applies Karatsuba multiplication to each row, and appends results.
+     * @param args Command-line arguments (not used).
+     */
     public static void main(String[] args) {
         String filePath = "Dataset.csv";
         String tempFilePath = "Dataset_temp.csv";
