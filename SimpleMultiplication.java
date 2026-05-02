@@ -113,7 +113,9 @@ public class SimpleMultiplication {
             System.out.println("-------------------------");
         }
         opsCounter += 1; 
+        // Nested loops to perform O(N^2) digit-by-digit multiplication
         for (int i = nLength - 1; i >= 0; i--) {
+            // Process each digit of the multiplier from right to left
             opsCounter += 1; 
             
             int multDigit = multiplier.charAt(i) - '0';
@@ -126,6 +128,7 @@ public class SimpleMultiplication {
             
             opsCounter += 1; 
             for (int j = mLength - 1; j >= 0; j--) {
+                // Multiply the current multiplier digit by each digit of the multiplicand
                 opsCounter += 1; 
                 
                 int baseDigit = multiplicand.charAt(j) - '0';
@@ -134,14 +137,17 @@ public class SimpleMultiplication {
                 int product = multDigit * baseDigit;
                 opsCounter += 2; 
                 
+                // Split the product into a partial digit (0-9) and a carrier digit (0-8)
                 int currentPartial = product % 10;
                 int currentCarrier = product / 10;
                 opsCounter += 4; 
                 
-                // Track mathematical results directly into the array based on positional offsets
+                // Track mathematical results directly into the array based on positional offsets.
+                // The index 'position' handles the horizontal shift for each multiplier digit.
                 int position = i + j + 1;
                 int sum = resultArr[position] + currentPartial;
                 resultArr[position] = sum % 10;
+                // Add the carry from the sum and the product-carrier to the next position left
                 resultArr[position - 1] += sum / 10 + currentCarrier;
                 opsCounter += 5; // Array assignments and shift maths
                 
@@ -178,14 +184,15 @@ public class SimpleMultiplication {
         }
         opsCounter += 1; 
         
-        // Finalize: Convert the array to a String, and then to BigInteger just ONCE at the end
+        // Finalize: Convert the array of digits into a single string, skipping leading zeros.
         StringBuilder finalResultStr = new StringBuilder();
         for (int digit : resultArr) {
-            // Ignore leading zeros
+            // Ignore leading zeros to maintain clean numeric output
             if (!(finalResultStr.length() == 0 && digit == 0)) {
                 finalResultStr.append(digit);
             }
         }
+        // Handle the case where the result is zero (empty string)
         BigInteger totalResult = finalResultStr.length() == 0 ? BigInteger.ZERO : new BigInteger(finalResultStr.toString());
         opsCounter += 2; 
         

@@ -3,6 +3,11 @@ import java.io.FileWriter;
 import java.math.BigInteger;
 import java.util.Scanner;
 
+/**
+ * Implementation of the Karatsuba multiplication algorithm.
+ * This class is designed to process large datasets and accurately count 
+ * primitive operations based on a specific reference implementation.
+ */
 public class Karatsuba {
 
     // Utility class to count primitive operations exactly like the reference code
@@ -18,8 +23,16 @@ public class Karatsuba {
         }
     }
 
+    /**
+     * Cache for powers of 10 to improve performance during large number operations.
+     */
     private static BigInteger[] tenPows = new BigInteger[20005];
 
+    /**
+     * Retrieves 10^n from cache or calculates it if not present.
+     * @param n The exponent for 10
+     * @return BigInteger representing 10^n
+     */
     public static BigInteger getTenPow(int n) {
         if (n < tenPows.length) {
             if (tenPows[n] == null) {
@@ -30,6 +43,10 @@ public class Karatsuba {
         return BigInteger.TEN.pow(n);
     }
 
+    /**
+     * Estimates the number of digits in a BigInteger using bit length for speed.
+     * Log10(2) is approximately 0.30103.
+     */
     public static int fastNumLength(BigInteger b) {
         if (b.signum() == 0) return 0; // The reference code implicitly treats 0 as length 0 via the > 0 condition
         b = b.abs();
@@ -49,6 +66,16 @@ public class Karatsuba {
         return noLen;
     }
 
+    /**
+     * Core Karatsuba multiplication logic.
+     * splits numbers into high and low parts: x = a*10^m + b, y = c*10^m + d
+     * result = z0*10^(2m) + (z1-z0-z2)*10^m + z2
+     * 
+     * @param x First factor
+     * @param y Second factor
+     * @param counter Metrics tracker
+     * @param times Row index or size for conditional logging
+     */
     public static BigInteger mult(BigInteger x, BigInteger y, PrimitiveOperationsCounter counter, int times) {
         boolean showConsoleOutput = (times <= 10);
         
@@ -181,10 +208,10 @@ public class Karatsuba {
                 writer.write(outLine + "\n");
                 writer.flush(); // Memory saving stream directly to disk
                 
-                // Console updates for prolonged massive executions
+                // Console updates for prolonged massive executions to show progress
                 if (n % 100 == 0) {
                     System.out.println("Calculated multiplications up to n=" + n);
-                    System.gc(); // Clean up garbage BigIntegers
+                    System.gc(); // Clean up garbage BigIntegers to avoid OutOfMemoryError
                 }
             }
             
