@@ -50,10 +50,16 @@ public class Karatsuba {
     }
 
     public static BigInteger mult(BigInteger x, BigInteger y, PrimitiveOperationsCounter counter, int times) {
+        boolean showConsoleOutput = (times <= 10);
+        
         // Base case for recursion
         if (x.compareTo(BigInteger.TEN) < 0 && y.compareTo(BigInteger.TEN) < 0) {
             counter.increment(7);  // in if condition, 2 function call, 2 comparisons, 1 logical operator, 1 multiplications, 1 return statements
-            return x.multiply(y);
+            BigInteger res = x.multiply(y);
+            if (showConsoleOutput) {
+                System.out.println("Base case partial product: " + x + " * " + y + " = " + res);
+            }
+            return res;
         }
 
         int noOneLength = numLength(x, counter);
@@ -79,6 +85,14 @@ public class Karatsuba {
         BigInteger d = ySplit[1];
         counter.increment(4); // Simulating 2 operations for divide, 2 operations for remainder
 
+        if (showConsoleOutput) {
+            System.out.println("---------------------------------------------------------");
+            System.out.println("Karatsuba step (splits):");
+            System.out.println("x = " + x + " -> a = " + a + ", b = " + b);
+            System.out.println("y = " + y + " -> c = " + c + ", d = " + d);
+            System.out.println("-------------------------");
+        }
+
         // Recursive calls
         BigInteger z0 = mult(a, c, counter, times);
         counter.increment(2); // 1 function call, 1 assignment
@@ -95,6 +109,15 @@ public class Karatsuba {
         BigInteger result = term1.add(term2).add(z2);
 
         counter.increment(10); // 3 multiplications, 2 subtractions, 2 additions, 2 power, 1 assignment
+
+        if (showConsoleOutput) {
+            System.out.println("Partial results for x=" + x + ", y=" + y + ":");
+            System.out.println("z0 (a*c) = " + z0);
+            System.out.println("z1 ((a+b)*(c+d)) = " + z1);
+            System.out.println("z2 (b*d) = " + z2);
+            System.out.println("Combined step result = " + result);
+            System.out.println("=========================");
+        }
 
         counter.increment(1); // 1 return statement
         return result;
@@ -131,6 +154,12 @@ public class Karatsuba {
                 BigInteger y = new BigInteger(columns[2]);
                 
                 PrimitiveOperationsCounter counter = new PrimitiveOperationsCounter();
+                
+                if (n <= 10) {
+                    System.out.println("\nEvaluating Karatsuba for n=" + n);
+                    System.out.println("x = " + x);
+                    System.out.println("y = " + y);
+                }
                 
                 // Execute Karatsuba and trace operation metrics
                 BigInteger productPart2 = mult(x, y, counter, n);
